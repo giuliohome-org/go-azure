@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
@@ -69,6 +71,31 @@ func main() {
 					return
 				}
 				log.Println("Double check, blob container ID:", *blobContainer_again.ID)
+
+
+				currentTime := time.Now()
+				today := strings.Split(currentTime.Format(time.RFC3339Nano), "+")[0]+"Z"
+				fmt.Printf("today %v format should be 2017-05-24T11:42:03.1567373Z\n", today)
+				tomorrow := strings.Split( currentTime.Add(24 * time.Hour).Format(time.RFC3339Nano) , "+")[0]+"Z"
+				fmt.Printf("tomorrow %v format should be 2017-05-24T11:42:03.1567373Z\n", tomorrow)
+
+				client := storageClientFactory.NewAccountsClient()
+				sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
+					KeyToSign:              to.Ptr("key1"),
+					SharedAccessExpiryTime: to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, tomorrow); return t }()),
+					Permissions:            to.Ptr(armstorage.PermissionsR),
+					Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
+					ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
+					Services:               to.Ptr(armstorage.ServicesB),
+					SharedAccessStartTime:  to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, today); return t }()),
+				}, nil)
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
+				token := *sasToken.AccountSasToken
+				fmt.Printf("SAS Token %v\n", token)
+				return
 			} else {
 				fmt.Printf("Container Get status code %d error code: %v", respErr.StatusCode, respErr.ErrorCode)
 				log.Fatal(respErr)
