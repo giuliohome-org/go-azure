@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -19,7 +18,6 @@ import (
 
 var (
 	subscriptionID     string
-	location           = "westeurope"
 	resourceGroupName  = "go-azure-sdk"
 	storageAccountName = "golangazure"
 	containerName      = "golang-container-" + RandStringBytes(4)
@@ -74,10 +72,10 @@ func main() {
 
 
 			currentTime := time.Now()
-			today := currentTime.Format(time.RFC3339Nano)
-			fmt.Printf("today %v format 2017-05-24T11:42:03.1567373Z\n", today)
-			tomorrow := currentTime.Add(24 * time.Hour).Format(time.RFC3339Nano)
-			fmt.Printf("tomorrow %v format 2017-05-24T11:42:03.1567373Z\n", tomorrow)
+			today :=  currentTime.Format("2006-01-02T03:04:05.9999999Z")
+			fmt.Printf("today %v should be format 2023-09-16T11:42:03.1567373Z\n", today)
+			tomorrow := currentTime.Add(24 * time.Hour).Format("2006-01-02T03:04:05.9999999Z")
+			fmt.Printf("tomorrow %v should be format 2023-09-17T11:42:03.1567373Z\n", tomorrow)
 
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
@@ -104,7 +102,6 @@ func main() {
 		id := *blobContainer.ID
 		fmt.Printf("Blob container already exists, id: %v", id)
 	}
-	return
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz"
