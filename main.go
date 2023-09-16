@@ -74,10 +74,10 @@ func main() {
 
 
 			currentTime := time.Now()
-			today := strings.Split(currentTime.Format(time.RFC3339Nano), "+")[0]+"Z"
-			fmt.Printf("today %v format should be 2017-05-24T11:42:03.1567373Z\n", today)
-			tomorrow := strings.Split( currentTime.Add(24 * time.Hour).Format(time.RFC3339Nano) , "+")[0]+"Z"
-			fmt.Printf("tomorrow %v format should be 2017-05-24T11:42:03.1567373Z\n", tomorrow)
+			today := currentTime.Format(time.RFC3339Nano)
+			fmt.Printf("today %v format 2017-05-24T11:42:03.1567373Z\n", today)
+			tomorrow := currentTime.Add(24 * time.Hour).Format(time.RFC3339Nano)
+			fmt.Printf("tomorrow %v format 2017-05-24T11:42:03.1567373Z\n", tomorrow)
 
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
