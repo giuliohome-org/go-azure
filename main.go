@@ -72,20 +72,17 @@ func main() {
 
 
 			currentTime := time.Now()
-			today :=  currentTime.Format("2006-01-02T03:04:05.9999999Z")
-			fmt.Printf("today %v should be formatted as 2023-09-16T11:42:03.1567373Z\n", today)
-			tomorrow := currentTime.Add(24 * time.Hour).Format("2006-01-02T03:04:05.9999999Z")
-			fmt.Printf("tomorrow %v should be formattes as 2023-09-17T11:42:03.1567373Z\n", tomorrow)
+			tomorrow := currentTime.Add(24 * time.Hour)
 
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
 				KeyToSign:              to.Ptr("key1"),
-				SharedAccessExpiryTime: to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, tomorrow); return t }()),
+				SharedAccessExpiryTime: to.Ptr( tomorrow.Round(time.Second).UTC() ),
 				Permissions:            to.Ptr(armstorage.PermissionsR),
 				Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
 				ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
 				Services:               to.Ptr(armstorage.ServicesB),
-				SharedAccessStartTime:  to.Ptr(func() time.Time { return currentTime }()),
+				SharedAccessStartTime:  to.Ptr( currentTime.Round(time.Second).UTC() ),
 			}, nil)
 			if err != nil {
 				log.Fatal(err)
