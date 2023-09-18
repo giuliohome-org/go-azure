@@ -51,7 +51,7 @@ func main() {
 	blobContainer, err := getBlobContainer(ctx)
 
 	var respErr *azcore.ResponseError
-	
+
 	if errors.As(err, &respErr) {
 		// Handle Error
 		if respErr.StatusCode == http.StatusNotFound {
@@ -70,19 +70,18 @@ func main() {
 			}
 			log.Println("Double check, blob container ID:", *blobContainer_again.ID)
 
-
 			currentTime := time.Now()
 			tomorrow := currentTime.Add(24 * time.Hour)
 
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
 				KeyToSign:              to.Ptr("key1"),
-				SharedAccessExpiryTime: to.Ptr( tomorrow.Round(time.Second).UTC() ),
+				SharedAccessExpiryTime: to.Ptr(tomorrow.Round(time.Second)),
 				Permissions:            to.Ptr(armstorage.PermissionsR),
 				Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
 				ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
 				Services:               to.Ptr(armstorage.ServicesB),
-				SharedAccessStartTime:  to.Ptr( currentTime.Round(time.Second).UTC() ),
+				SharedAccessStartTime:  to.Ptr(currentTime.Round(time.Second)),
 			}, nil)
 			if err != nil {
 				log.Fatal(err)
