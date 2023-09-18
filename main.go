@@ -85,7 +85,7 @@ func main() {
 				Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
 				ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
 				Services:               to.Ptr(armstorage.ServicesB),
-				SharedAccessStartTime:  to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, today); return t }()),
+				SharedAccessStartTime:  to.Ptr(func() time.Time { return currentTime }()),
 			}, nil)
 			if err != nil {
 				log.Fatal(err)
