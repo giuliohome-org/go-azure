@@ -98,12 +98,12 @@ func main() {
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
 				KeyToSign:              to.Ptr("key1"),
-				SharedAccessExpiryTime: to.Ptr(tomorrow.UTC()),
+				SharedAccessExpiryTime: to.Ptr(tomorrow.Round(time.Microsecond)),
 				Permissions:            to.Ptr(armstorage.PermissionsR),
 				Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
 				ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
 				Services:               to.Ptr(armstorage.ServicesB),
-				SharedAccessStartTime:  to.Ptr(currentTime.UTC()),
+				SharedAccessStartTime:  to.Ptr(currentTime.Round(time.Microsecond)),
 			}, nil)
 			if err != nil {
 				log.Fatal(err)
