@@ -16,13 +16,14 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 )
 
 var (
 	subscriptionID     string
 	resourceGroupName  = "go-azure-sdk"
 	storageAccountName = "golangazure"
-	containerName      = "golang-container-" + RandStringBytes(4)
+	containerName      = "golang-container-" + "my-cont" // RandStringBytes(4)
 )
 
 var (
@@ -30,39 +31,73 @@ var (
 	blobContainersClient *armstorage.BlobContainersClient
 )
 
-func main() {
-	fmt.Println("Starting azure golang main.")
-	subscriptionID = os.Getenv("AZURE_SUBSCRIPTION_ID")
-	if len(subscriptionID) == 0 {
-		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
+func printSasToken(accountKey string, scred *azblob.SharedKeyCredential) {
+	blob_client, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net/%s", storageAccountName, containerName), scred, nil)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
-
-	accountKey := os.Getenv("AZURE_ACCOUNT_KEY")
-	if len(accountKey) == 0 {
-		log.Fatal("AZURE_ACCOUNT_KEY is not set.")
-	}
-	scred, err := azblob.NewSharedKeyCredential(storageAccountName, accountKey)
-	blob_client, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net/", storageAccountName), scred, nil)
+	cli_o := &service.GetSASURLOptions{ StartTime: to.Ptr( time.Now().Add(2 * time.Minute) )} 
 	sas_url, err := blob_client.ServiceClient().GetSASURL(
 		sas.AccountResourceTypes{ Container: true },
 		sas.AccountPermissions{
 			Create: true, Delete: true, List: true, Add: true,
 		},
 		time.Now().Add(24 * time.Hour),
-		nil,	
+		cli_o,	
 	)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 	fmt.Printf("SAS URL %v\n", sas_url)
+}
 
+func main() {
+	fmt.Println("Starting azure golang main.")
+
+	accountKey := os.Getenv("AZURE_ACCOUNT_KEY")
+	if len(accountKey) == 0 {
+		log.Fatal("AZURE_ACCOUNT_KEY is not set.")
+	}
+	
+	ctx := context.Background()
+	scred, err := azblob.NewSharedKeyCredential(storageAccountName, accountKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	blob_client, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName), scred, nil)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	blob_resp, err := blob_client.CreateContainer(ctx, containerName, nil)
+	var blobErr *azcore.ResponseError
+	if errors.As(err, &blobErr) {
+		if blobErr.ErrorCode == "ContainerAlreadyExists" {
+			log.Println("Blob container already exists")
+			printSasToken(accountKey, scred)
+			return
+		} else {
+			log.Fatal(err)
+		return
+		}
+	} else {
+		log.Println("Created blob container vers " + *blob_resp.Version)
+		printSasToken(accountKey, scred)
+		return
+	}
+
+	// skipping the rest of main ( with armstorage and azidentity )
+	subscriptionID = os.Getenv("AZURE_SUBSCRIPTION_ID")
+	if len(subscriptionID) == 0 {
+		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
+	}
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		// handle error
 		log.Fatal(err)
 	}
-	ctx := context.Background()
 
 	storageClientFactory, err = armstorage.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
