@@ -14,6 +14,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 )
 
 var (
@@ -34,6 +36,26 @@ func main() {
 	if len(subscriptionID) == 0 {
 		log.Fatal("AZURE_SUBSCRIPTION_ID is not set.")
 	}
+
+	accountKey := os.Getenv("AZURE_ACCOUNT_KEY")
+	if len(accountKey) == 0 {
+		log.Fatal("AZURE_ACCOUNT_KEY is not set.")
+	}
+	scred, err := azblob.NewSharedKeyCredential(storageAccountName, accountKey)
+	blob_client, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net/", storageAccountName), scred, nil)
+	sas_url, err := blob_client.ServiceClient().GetSASURL(
+		sas.AccountResourceTypes{ Container: true },
+		sas.AccountPermissions{
+			Create: true, Delete: true, List: true, Add: true,
+		},
+		time.Now().Add(24 * time.Hour),
+		nil,	
+	)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	fmt.Printf("SAS URL %v\n", sas_url)
 
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
@@ -76,12 +98,12 @@ func main() {
 			client := storageClientFactory.NewAccountsClient()
 			sasToken, err := client.ListAccountSAS(ctx, resourceGroupName, storageAccountName, armstorage.AccountSasParameters{
 				KeyToSign:              to.Ptr("key1"),
-				SharedAccessExpiryTime: to.Ptr(tomorrow.Round(time.Second)),
+				SharedAccessExpiryTime: to.Ptr(tomorrow.UTC()),
 				Permissions:            to.Ptr(armstorage.PermissionsR),
 				Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPSHTTP),
 				ResourceTypes:          to.Ptr(armstorage.SignedResourceTypesS),
 				Services:               to.Ptr(armstorage.ServicesB),
-				SharedAccessStartTime:  to.Ptr(currentTime.Round(time.Second)),
+				SharedAccessStartTime:  to.Ptr(currentTime.UTC()),
 			}, nil)
 			if err != nil {
 				log.Fatal(err)
