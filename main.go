@@ -23,7 +23,7 @@ var (
 	subscriptionID     string
 	resourceGroupName  = "go-azure-sdk"
 	storageAccountName = "golangazure"
-	containerName      = "golang-container-" + RandStringBytes(4)
+	containerName      = "golang-container-" + "test" // RandStringBytes(4)
 )
 
 var (
@@ -31,13 +31,31 @@ var (
 	blobContainersClient *armstorage.BlobContainersClient
 )
 
+func genSaSToken(scred *azblob.SharedKeyCredential) {
+	// Create Blob Signature Values with desired permissions and sign with user delegation credential
+	sasQueryParams, err := sas.BlobSignatureValues{
+		Protocol:      sas.ProtocolHTTPS,
+		StartTime:     time.Now().UTC().Add(time.Second * -10),
+		ExpiryTime:    time.Now().UTC().Add(15 * time.Minute),
+		Permissions:   to.Ptr(sas.ContainerPermissions{Read: true, List: true}).String(),
+		ContainerName: containerName,
+	}.SignWithSharedKey(scred)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	sasURL := fmt.Sprintf("https://%s.blob.core.windows.net/%s?%s", storageAccountName, containerName, sasQueryParams.Encode())
+	fmt.Printf("SAS URL list files %v&restype=container&comp=list\n", sasURL)
+}
+
 func printSasToken(accountKey string, scred *azblob.SharedKeyCredential) {
 	blob_client, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net/%s", storageAccountName, containerName), scred, nil)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	cli_o := &service.GetSASURLOptions{ StartTime: to.Ptr( time.Now().Add(2 * time.Minute) )} 
+	cli_o := &service.GetSASURLOptions{ StartTime: to.Ptr( time.Now().Add(2 * time.Second) )} 
 	sas_url, err := blob_client.ServiceClient().GetSASURL(
 		sas.AccountResourceTypes{ Container: true },
 		sas.AccountPermissions{
@@ -77,7 +95,7 @@ func main() {
 	if errors.As(err, &blobErr) {
 		if blobErr.ErrorCode == "ContainerAlreadyExists" {
 			log.Println("Blob container already exists")
-			printSasToken(accountKey, scred)
+			genSaSToken(scred)
 			return
 		} else {
 			log.Fatal(err)
@@ -85,7 +103,7 @@ func main() {
 		}
 	} else {
 		log.Println("Created blob container vers " + *blob_resp.Version)
-		printSasToken(accountKey, scred)
+		genSaSToken(scred)
 		return
 	}
 
