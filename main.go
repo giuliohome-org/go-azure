@@ -23,7 +23,7 @@ var (
 	subscriptionID     string
 	resourceGroupName  = "go-azure-sdk"
 	storageAccountName = "golangazure"
-	containerName      = "golang-container-" + "my-cont" // RandStringBytes(4)
+	containerName      = "golang-container-" + RandStringBytes(4)
 )
 
 var (
@@ -50,7 +50,8 @@ func printSasToken(accountKey string, scred *azblob.SharedKeyCredential) {
 		log.Fatal(err)
 		return
 	}
-	fmt.Printf("SAS URL %v\n", sas_url)
+	fmt.Printf("SAS URL list files %v&restype=container&comp=list\n", sas_url)
+
 }
 
 func main() {
