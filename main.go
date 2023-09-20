@@ -32,11 +32,10 @@ var (
 )
 
 func genSaSToken(scred *azblob.SharedKeyCredential) {
-	// Create Blob Signature Values with desired permissions and sign with user delegation credential
 	sasQueryParams, err := sas.BlobSignatureValues{
 		Protocol:      sas.ProtocolHTTPS,
-		StartTime:     time.Now(),
-		ExpiryTime:    time.Now().Add(15 * time.Minute),
+		StartTime:     time.Now().UTC(),
+		ExpiryTime:    time.Now().UTC().Add(15 * time.Minute),
 		Permissions:   to.Ptr(sas.ContainerPermissions{Read: true, List: true}).String(),
 		ContainerName: containerName,
 	}.SignWithSharedKey(scred)
